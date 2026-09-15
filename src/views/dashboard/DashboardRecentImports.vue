@@ -5,9 +5,14 @@ import noImage from '@images/no-image.jpeg'
 import { formatDateDifference, formatFileSize } from '@/@core/utils/formatters'
 import { useI18n } from 'vue-i18n'
 import { formatMusicAudioSpecs } from '@/utils/music'
+import { getDisplayImageUrl } from '@/utils/imageUtils'
 import { useKeepAliveRefresh } from '@/composables/useKeepAliveRefresh'
+import { useGlobalSettingsStore } from '@/stores'
 
 const { t } = useI18n()
+
+// 全局设置
+const globalSettingsStore = useGlobalSettingsStore()
 
 // 仪表板最多展示十条记录，超出部分通过列表滚动查看。
 const RECENT_IMPORT_LIMIT = 10
@@ -29,9 +34,14 @@ async function loadRecentImports() {
 
 /** 返回经过后端图片代理的海报地址。 */
 function getPosterUrl(item: TransferHistory) {
-  if (!item.image) return noImage
+  const image = item.image
+  if (!image) return noImage
 
-  return `${import.meta.env.VITE_API_BASE_URL}system/img/0?imgurl=${encodeURIComponent(item.image)}`
+  if (!/^https?:\/\//i.test(image)) {
+    return `${import.meta.env.VITE_API_BASE_URL}system/img/0?imgurl=${encodeURIComponent(image)}`
+  }
+
+  return getDisplayImageUrl(image, globalSettingsStore.globalSettings.GLOBAL_IMAGE_CACHE)
 }
 
 /** 组合媒体类型、季集和文件大小作为记录副标题。 */
